@@ -5,8 +5,8 @@ import std/strformat
 
 type Cell* = enum
   Empty, Red, Blue
-const Width = 5
-const Height = 5
+const Width = 11
+const Height = 11
 type Grid* = ref array[Width, array[Height, Cell]]
 
 type Node* = ref object
@@ -22,7 +22,6 @@ type Hex* = ref object of PyNimObjectExperimental
   grid*: Grid
   ended*: bool
   turn*: Cell
-  doEcho*: bool
 
 proc restart(self: Hex) =
     for x in 0..<Width:
@@ -95,7 +94,7 @@ proc print*(grid: Grid) {.exportpy.} =
   flushFile(stdout)
 
 proc evaluate*(grid: Grid, turn: Cell): int =
-    let iterations = 200
+    let iterations = 100
     var wins = 0
     for i in 0..<iterations:
         var copy = grid[]
@@ -120,44 +119,27 @@ proc getPossibleMoves(self: Hex): seq[(int,int)] =
                 possibleMoves.add((x, y))
     return possibleMoves
 
-proc alphaBeta*(self: Hex, depth: int, alpha: var int, beta: var int, turn: Cell, lastMove: (int, int)): (int, (int, int)) =
+proc negamax*(self: Hex, depth: int, a, beta: int, turn: Cell, lastMove: (int, int)): (int, (int, int)) =
+    var alpha: int = a
     let otherTurn = if turn == Cell.Red: Cell.Blue else: Cell.Red
     if depth == 0 or self.grid.checkWin(otherTurn):
-        let value = self.grid.evaluate(self.turn)
-        if self.doEcho:
-            echo &"TERMINAL move: {lastMove} has value: {value}"
+        let value = self.grid.evaluate(otherTurn)
         return (value, lastMove)
-    let maximizing = self.turn == turn
     let possibleMoves = self.getPossibleMoves()
     # echo &"max: {maximizing}, depth: {depth}, turn: {turn}, possiblemoves: {possibleMoves}"
-    if maximizing:
-        var bestValue = int.low
-        var bestMove: (int, int)
-        for (x, y) in possibleMoves:
-            self.grid[x, y] = turn
-            let (value, move) = self.alphaBeta(depth - 1, alpha, beta, otherTurn, (x, y))
-            self.grid[x, y] = Cell.Empty
-            if value > bestValue:
-                bestValue = value
-                bestMove = move
-            # if value > beta:
-            #     break # Beta cutoff
-            alpha = max(alpha, value)
-        return (bestValue, bestMove)
-    else:
-        var bestValue = int.high
-        var bestMove: (int, int)
-        for (x, y) in possibleMoves:
-            self.grid[x, y] = turn
-            let (value, move) = self.alphaBeta(depth - 1, alpha, beta, otherTurn, (x, y))
-            self.grid[x, y] = Cell.Empty
-            if value < bestValue:
-                bestValue = value
-                bestMove = move
-            # if value < alpha:
-            #     break # Alpha cutoff
-            beta = min(beta, value)
-        return (bestValue, bestMove)
+    var bestValue = int.low
+    var bestMove: (int, int)
+    for (x, y) in possibleMoves:
+        self.grid[x, y] = turn
+        let (value, move) = self.negamax(depth - 1, -beta, -alpha, otherTurn, (x, y))
+        self.grid[x, y] = Cell.Empty
+        if value > bestValue:
+            bestValue = value
+            bestMove = move
+        alpha = max(alpha, value)
+        if alpha >= beta:
+            break
+    return (bestValue, bestMove)
 
 proc doMove*(self: Hex) =
     let possibleMoves = self.getPossibleMoves()

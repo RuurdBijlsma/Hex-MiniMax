@@ -32,8 +32,7 @@ test "minimax":
     var alpha: int = int.low
     var beta: int = int.high
 
-    hex.doEcho = step > 20
-    let (score, move) = hex.alphaBeta(3, alpha, beta, hex.turn, (-1, -1))
+    let (score, move) = hex.negamax(3, alpha, beta, hex.turn, (-1, -1))
     hex.grid[move[0], move[1]] = hex.turn
     hex.grid.print()
     echo &"Expected {hex.turn} score {score}"

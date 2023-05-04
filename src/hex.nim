@@ -78,8 +78,14 @@ proc checkWin*(grid: Grid, turn: Cell): bool =
     return false
 
 proc print*(grid: Grid) {.exportpy.} =
+  const abc = "ABCDEFGHIJK"
   echo "====================================="
+  stdout.write("  ")
+  for x in 1..Width:
+    stdout.write(&"{x}  ")
+  stdout.write("\n")
   for y in 0..<Height:
+    stdout.write(&"{abc[y]} ")
     for x in 0..<Width:
       let val = grid[x, y]
     #   stdout.write(&"{x} ")

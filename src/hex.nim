@@ -2,6 +2,7 @@ import nimpy
 from std/random import sample, randomize, rand
 import std/strutils
 import std/strformat
+import std/sequtils
 
 type Cell* = enum
   Empty, Red, Blue
@@ -10,8 +11,8 @@ const Height = 11
 type Grid* = ref array[Width, array[Height, Cell]]
 
 type Node* = ref object
-    terminal: bool
-    children: seq[Node]
+  terminal: bool
+  children: seq[Node]
 
 proc `[]`*(g: Grid, x, y: int): Cell =
   return g[x][y]
@@ -24,9 +25,9 @@ type Hex* = ref object of PyNimObjectExperimental
   turn*: Cell
 
 proc restart(self: Hex) =
-    for x in 0..<Width:
-        for y in 0..<Height:
-            self.grid[x, y] = Cell.Empty
+  for x in 0..<Width:
+    for y in 0..<Height:
+      self.grid[x, y] = Cell.Empty
 
 proc initHex*(): Hex {.exportpy.} =
   randomize()
@@ -36,14 +37,14 @@ proc initHex*(): Hex {.exportpy.} =
   return hex
 
 const neighbours = [
-    (1, 0),#right
-    (-1, 0),#left
+  (1, 0),#right
+  (-1, 0),#left
 
-    (0, 1),#bot right
-    (-1, 1),#bot left
+  (0, 1),#bot right
+  (-1, 1),#bot left
 
-    (0, -1),#top right
-    (1, -1),#top left
+  (0, -1),#top right
+  (1, -1),#top left
 ]
 
 proc checkWin*(grid: Grid, turn: Cell): bool =
@@ -76,6 +77,15 @@ proc checkWin*(grid: Grid, turn: Cell): bool =
             queue.add((xn, yn))
 
     return false
+
+proc toArray*(grid: Grid): array[Width * Height, int] =
+  var arr: array[Width * Height, int]
+  for y in 0..<Height:
+    for x in 0..<Width:
+      let j = grid[x, y].ord
+      arr[y * Width + x] = j
+  return arr
+
 
 proc print*(grid: Grid) {.exportpy.} =
   const abc = "ABCDEFGHIJK"
